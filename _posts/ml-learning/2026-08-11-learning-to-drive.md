@@ -1,69 +1,32 @@
----
-layout: post
-title: Learning to Drive — An ML Engineer's Journey into Autonomous Driving
-date: 2026-08-11
----
+I watched the virtual car in a synthetic town rendered by a video game engine follow a predetermined path to reach its destination. Then I watched it again, and again and again. I wrote an eval script which counted exactly 6 successes out of 10. My unsophisticated, RL based model has finally learned to drive!
 
-It happened on a quiet Tuesday night. I was watching a pygame window showing
-what a camera attached to a virtual car was seeing — a synthetic town rendered
-by a video-game engine, a Tesla Model 3, an empty road ahead. Thirteen training
-rounds into the project, the car turned at an intersection, kept its lane, and
-pulled up at its destination. I ran it again on a fresh random route. It did it
-again. Then 6 out of 10 times.
+<video controls width="100%">
+  <source src="/videos/Carla First Drive.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
-A small thing, by the standards of the field. A near-trivial thing, even — a
-simulated car, a 200-meter route, no traffic, no pedestrians. But between that
-first bashful baseline and that quiet Tuesday night sat thirteen rounds of
-training, a crash, a collapse, a reward-hacking scandal, a six-round regression,
-and one hard-won lesson: **in deep RL, you are almost never fixing the problem
-you think you are fixing.**
+This is a small thing by the standards of the field. A near trivial thing, a simulated car with perfect sensors, 200 meter route, no traffic, no pedestrians. But between that first baseline model which was stalled in one place to the quiet Tuesday night I saw my simulated car finally touch the finish line, I had a lot of learnings that I would like to share in this post.
 
-This is the story of those rounds. It's also the start of a longer journey I
-want to take seriously: the goal isn't to build a good CARLA agent. The goal is
-to become the kind of engineer who can reason about autonomous-driving ML
-systems — and about my own learning process — at a Staff level. This post is
-part one of that.
+## Why I Started Teaching a Car to Drive
 
----
+I live in the heart of The Silicon Valley in California. Not a day goes by without seeing those autonomous driverless Waymo driving themselves around. They have always fascinated me. I am an ML engineer by profession and I love to tweak things. I started this journey to learn how these self driving algorithms work under the hood - and pick up some reinforcement learning skills on the way.
 
-## 1. Why I Started Teaching a Car to Drive
+## CARLA
+[CARLA](https://carla.org/) is an open-source driving simulator built on Unreal Engine. It gives you a city, a car, sensors, physics, and a Python API that exposes everything. It's a real self-driving testbed that a person can run at home, in a Docker container, on a single machine.
 
-I'm an ML engineer. I've spent years building ML systems, but mostly on the
-prediction side of things — batch scoring, analytics, the unglamorous
-machinery. Autonomous driving is the hardest, most consequential applied-ML
-problem I know of, and I want to work at that level. There's a catch: you can't
-learn autonomous driving from your apartment. You can't get your hands on a
-sensor rig, or a production data pipeline, or a safety case.
+The CARLA bundles itself with several examples. Before I start building my own agent, I tried a few examples to get a hang of running the simulator and making sure everything works correctly. The simultor setup itself took some time. At the time of writing this, the official carla isn't supported on Ubuntu 26.04. So I downloaded a docker image and ran the server with GPU support.
 
-But you *can* get CARLA. CARLA is an open-source driving simulator built on
-Unreal Engine. It gives you a city, a car, sensors, physics, and a Python API
-that exposes everything. It's the closest thing to a real self-driving testbed
-that a person can run at home, in a Docker container, on a single machine.
+```
+docker pull carlasim/carla:0.9.16
 
-So I set up a repository, hooked a learning agent into it, and started teaching
-a virtual car to drive with reinforcement learning. The explicit rule I wrote
-down for myself before starting: **this is a research project, not a coding
-project.** The objective is the knowledge, the intuition, the engineering
-judgment — not a benchmark number. And because I'm a firm believer that
-unwritten reasoning rots, I built the whole thing around a small writing
-discipline:
+docker run --privileged --gpus all --net=host -v /tmp/.X11-unix:/tmp/.X11-unix:rw carlasim/carla:0.9.16 /bin/bash ./CarlaUE4.sh -vulkan -RenderOffScreen
+```
 
-- `THINKING.md` — a research notebook for my hypotheses. Untouchable, like a
-  lab notebook. Never rewritten after the fact.
-- `PROGRESS.md` — a factual, round-by-round log of what changed, what happened,
-  and what I concluded. Failed experiments get preserved, not deleted. They're
-  worth more than the successes.
-- One rule for experiments: **one hypothesis per experiment.** If a change
-  bundles three ideas, you'll never know which one mattered.
+Then I cloned the [CARLA repo](https://github.com/carla-simulator/carla) and tried `manual_contro.py` spending a few minutes driving around. It also contains `automatic_control.py` which has some hardcoded rules to allow the car drive around the city.
 
-This blog post is the public, edited version of that log.
+## My First RL Driving Agent
 
----
-
-## 2. My First RL Driving Agent
-
-The architecture was embarrassingly standard, and that was the point. I wanted
-a minimal, correct end-to-end setup before I wanted anything clever:
+Simple setup:
 
 - **CARLA server** (Docker, Unreal Engine) running a town and ticking in
   *synchronous mode* at a fixed 20 Hz.
@@ -82,16 +45,14 @@ The observation was four numbers:
 ```
 
 The action was two numbers: steering in `[-1, 1]` and throttle in `[0, 1]`.
-There was no brake — the agent had no way to slow down. That omission would
-come back to haunt me.
+There was no brake - the agent had no way to slow down. 
 
 The reward was crude: a flat `+10` per waypoint passed, and terminal penalties
 for crashing. PPO with the standard recipe: `n_steps=2048`, `n_epochs=10`,
-`gamma=0.99`, and `ent_coef=0.0` — the Stable-Baselines3 default, which I would
-later learn is a loaded gun.
+`gamma=0.99`, and `ent_coef=0.0` — the Stable-Baselines3 default
 
 **The first result: "baseline behavior only."** The car existed, moved, mostly
-wandered and crashed. Fine. Then round 2 was a disaster — and not the fun kind.
+wandered and crashed. Then round 2 was a disaster — and not the fun kind.
 Reward hovered around −9.98, episodes lasted 1–4 steps, and I burned ~2,700
 episodes before I stopped it. The root cause had nothing to do with reward
 design: the training process was executing a stale, buggy version of the
@@ -464,3 +425,4 @@ the narrator of round 14.
 
 *Next in this series: the camera-based agent, the measurement of what it
 changes, and whatever round 14 has to say about the questions above.*
+
