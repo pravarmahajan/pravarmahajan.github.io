@@ -1,7 +1,7 @@
 I watched the virtual car in a synthetic town rendered by a video game engine follow a predetermined path to reach its destination. Then I watched it again, and again and again. I wrote an eval script which counted exactly 6 successes out of 10. My unsophisticated, RL based model has finally learned to drive!
 
 <video controls width="100%">
-  <source src="/videos/Carla First Drive.mp4" type="video/mp4">
+  <source src="/videos/carla_first_drive.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
@@ -350,43 +350,11 @@ it learn its own features. The plan, when I get there:
   *perceivable* from pixel motion across frames, the way it is for a human.
 - Keep the reward and termination logic **byte-identical** to round 13's, so the
   observation change is the only variable in the experiment.
-- Reconcile with a practical wrinkle: training currently disables CARLA
-  rendering entirely (~500+ steps/sec — one of the better infra decisions in
-  this project), and a camera during training reverses that cost.
 
-Expected tradeoffs to test honestly: sample efficiency, per-step cost, credit
-assignment over a much larger network, and whether a pixel policy can match — or
-exceed — the vector policy's completion rate at all.
 
----
 
-## 9. What Changes When the Agent Sees the Road?
 
-*Status: companion to section 8 — the analysis to write after the camera agent
-exists.*
-
-Some of what I expect to learn, stated as hypotheses to be tested rather than
-conclusions:
-
-- **Convolutional inductive biases — locality, weight sharing, translation
-  invariance — are a good structural fit for driving.** A road is a
-  spatially-structured, translation-repetitive signal; a CNN is built to exploit
-  exactly that, and an MLP on flattened pixels is not.
-- **Pixels recover, at a cost, what the vector gave for free.** Curvature, lane
-  markings, obstacles, and context that my nine numbers never carried all
-  become *learned inferences* — but exact speed (a snapshot is a snapshot) and
-  precise distance (depth must be inferred, not measured) are things the vector
-  had directly. The agent's perception problem changes shape, not size.
-- **New failure surfaces arrive with the new representation.** Lighting,
-  weather, distractors, the semantic gap between "pedestrian" and "parked car"
-  (geometry can't tell you), and eventually the sim-to-real cliff.
-- **Measurement stays the same.** Same deterministic eval, same termination
-  breakdown. No new metrics until the old ones are matched — otherwise the
-  comparison isn't a comparison.
-
----
-
-## 10. What I Still Don't Understand About Deep RL
+## 9. What I Still Don't Understand About Deep RL
 
 It would be a lie to end this post pretending I've got it figured out. I keep a
 running list of things I use fluently but don't deeply understand, and it is
@@ -400,20 +368,14 @@ the honest place to end:
   SAC — off-policy, replay-buffered, with self-tuned entropy — have avoided
   rounds 9–11 entirely? Or introduced its own pathologies? The comparison
   experiment is on the list.
-- **Why entropy helps exploration.** I know the equation and the empirical fact.
-  I don't have a first-principles intuition for *why* maximizing policy entropy
-  produces useful exploration rather than just noise.
-- **When does PPO fundamentally fail?** I've now seen it fail in two instructive
-  ways (mode collapse under a hostile reward; σ collapse under a hostile
-  penalty). I don't yet know how to predict those from first principles.
-- **Would round 13 reproduce?** One clean run is not a result. Three seeds, or
-  an automated hyperparameter/reward search scored on a reward-*independent*
-  metric, is the difference between a story and a finding.
+- **Jitterness.** See the jittery drive in the video at the top of the post? 
+  I have not been able to fix that. I used action low pass filter and action
+  repeat to limited success. Not sure how far to push those two dials. 
 
 And one personal note that belongs here. Mid-project, I wrote in my thinking
 log: *"It probably isn't getting enough reward for completing. Maybe I should
-increase it to 10000."* It took an honest critique from my research partner to
-stop me: don't pull a number out of feeling — near the goal, a 10,000 bonus
+increase it to 10000."* It took an honest critique from my research partner (Claude Code)
+to stop me: don't pull a number out of feeling — near the goal, a 10,000 bonus
 destabilizes gradients, and the right reward scale is something you *derive*
 from the discount factor, not something you pick. I was about to tune the
 objective by vibes, at the exact moment the whole project had taught me not to.
@@ -423,6 +385,4 @@ now — some of the time, on simple routes, in a simulated town. That's a
 starting line, not a finish. And the reader is now, as I was a few months ago,
 the narrator of round 14.
 
-*Next in this series: the camera-based agent, the measurement of what it
-changes, and whatever round 14 has to say about the questions above.*
 
