@@ -287,3 +287,43 @@ footer {
 // ... Otherwise it really bloats up the top of the CSS file and makes it difficult to find the start
 @import "highlights";
 @import "svg-icons";
+
+
+// Interactive figures embedded in technical posts
+.interactive-figure {
+  display: block;
+  width: 100%;
+  height: 500px;
+  margin: 20px 0 8px;
+  border: 1px solid $lightGray;
+  border-radius: 4px;
+  background: $white;
+}
+
+.interactive-figure--compact {
+  height: 380px;
+}
+
+.interactive-figure--tall {
+  height: 600px;
+}
+
+.figure-caption {
+  margin-top: 8px;
+  color: $gray;
+  font-size: 15px;
+}
+
+@include mobile {
+  .interactive-figure {
+    height: 420px;
+  }
+
+  .interactive-figure--compact {
+    height: 340px;
+  }
+
+  .interactive-figure--tall {
+    height: 500px;
+  }
+}
