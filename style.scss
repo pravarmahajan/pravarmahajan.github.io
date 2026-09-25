@@ -292,20 +292,24 @@ footer {
 // Interactive figures embedded in technical posts
 .interactive-figure {
   display: block;
-  width: 100%;
-  height: 500px;
-  margin: 20px 0 8px;
+  position: relative;
+  left: 50%;
+  width: min(1100px, calc(100vw - 32px));
+  max-width: none;
+  height: 620px;
+  margin: 24px 0 8px;
+  transform: translateX(-50%);
   border: 1px solid $lightGray;
   border-radius: 4px;
   background: $white;
 }
 
 .interactive-figure--compact {
-  height: 380px;
+  height: 480px;
 }
 
 .interactive-figure--tall {
-  height: 600px;
+  height: 720px;
 }
 
 .figure-caption {
@@ -316,14 +320,17 @@ footer {
 
 @include mobile {
   .interactive-figure {
-    height: 420px;
+    left: auto;
+    width: 100%;
+    height: 480px;
+    transform: none;
   }
 
   .interactive-figure--compact {
-    height: 340px;
+    height: 400px;
   }
 
   .interactive-figure--tall {
-    height: 500px;
+    height: 560px;
   }
 }
