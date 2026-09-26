@@ -91,16 +91,53 @@ The attention-score change was even more direct:
 
 Ablating `0.7` increased repeated-half loss by **9.130** and almost completely erased the induction patterns of both layer-one heads. This is evidence that the behavior of `1.4` and `1.10` depends on information supplied by `0.7`.
 
-Removing control head `0.3` unexpectedly improved both loss and induction scores on this task. Head `0.3` is a first-token head rather than an inert component, so one possibility is that its residual-stream contribution partially interferes with induction on this artificial task. I did not test that explanation, and the result remains an interesting follow-up question.
+Removing control head `0.3` unexpectedly improved both loss and induction scores on this task. Because replacing a head's output with the zero vector can move the residual stream away from its usual activation distribution, I could not tell whether this reflected the head's normal role or an artifact of zero ablation. That ambiguity motivated a second intervention.
 
 <iframe class="interactive-figure interactive-figure--compact" src="{{ site.baseurl }}/assets/induction-circuits/layer0-ablation-scores.html" title="Layer-one induction scores after layer-zero ablation" loading="lazy"></iframe>
 <p class="figure-caption">Ablating previous-token head 0.7 collapses the induction scores of layer-one heads 1.4 and 1.10.</p>
 
+## Does the conclusion survive mean ablation?
+
+Instead of setting a selected head's output to zero, I next replaced it with that head's mean output. I estimated a separate mean for each sequence position from an independent batch of repeated random sequences. I then evaluated mean ablation on the same 20 sequences used for zero ablation, with every condition paired against the normal model on identical tokens.
+
+I expected mean ablation to produce less drastic changes for both the control heads and the candidate circuit heads. The results were mixed and surprising:
+
+| Intervention | Zero-ablation repeated-half change | Mean-ablation repeated-half change |
+|---|---:|---:|
+| `1.3` control | −0.131 ± 0.074 | +0.071 ± 0.053 |
+| `1.4` | +2.441 ± 0.341 | +2.958 ± 0.314 |
+| `1.10` | +5.632 ± 0.323 | +5.847 ± 0.340 |
+| `1.4` and `1.10` | +8.612 ± 0.531 | +9.364 ± 0.539 |
+| `0.3` control | −1.724 ± 0.384 | −0.037 ± 0.134 |
+| `0.7` | +9.130 ± 0.527 | +9.229 ± 0.517 |
+
+Here, `±` denotes the standard deviation across the 20 paired sequence-level changes. Mean-ablating `1.4`, `1.10`, both induction heads, or `0.7` increased repeated-half loss in all 20 trials. Their effects were not weaker than under zero ablation; they were slightly stronger on average.
+
+The controls behaved differently. Mean-ablating `0.3` moved its repeated-half effect from **−1.724** to **−0.037**, which is close to neutral. The large first-half changes produced by zero ablation also mostly disappeared: for example, the changes for `1.4`, both induction heads, and `0.3` moved from **−0.842**, **−0.855**, and **−1.074** under zero ablation to **+0.010**, **+0.006**, and **+0.013** under mean ablation.
+
+<iframe class="interactive-figure" src="{{ site.baseurl }}/assets/induction-circuits/zero-vs-mean-ablation.html" title="Repeated-half loss changes under zero and mean ablation" loading="lazy"></iframe>
+<p class="figure-caption">Mean paired change in repeated-half loss across the same 20 sequences. Error bars show standard deviation across trials.</p>
+
+The attention measurements showed the same contrast. Both interventions reduced the induction scores of `1.4` and `1.10` to approximately zero after ablating `0.7`. However, the increase caused by zero-ablating control head `0.3` disappeared under mean ablation:
+
+| Layer-zero condition | Head `1.4` | Head `1.10` |
+|---|---:|---:|
+| Normal | 0.672 | 0.868 |
+| Zero-ablate `0.3` control | 0.875 | 0.945 |
+| Mean-ablate `0.3` control | 0.677 | 0.872 |
+| Zero-ablate `0.7` | 0.005 | 0.010 |
+| Mean-ablate `0.7` | 0.005 | 0.011 |
+
+<iframe class="interactive-figure interactive-figure--compact" src="{{ site.baseurl }}/assets/induction-circuits/zero-vs-mean-attention.html" title="Induction scores under zero and mean layer-zero ablation" loading="lazy"></iframe>
+<p class="figure-caption">Mean induction scores across 20 paired trials. Mean ablation removes the control-head increase while preserving the collapse caused by ablating 0.7.</p>
+
+Mean ablation therefore produced a cleaner separation between the candidate circuit heads and the controls in this experiment. The control effects moved toward neutral, while the effects of the induction heads and the previous-token head remained strong. This does not establish that mean ablation is universally more reliable, but it shows that the central result is robust to the choice between zero and mean replacement rather than being an artifact of setting head outputs to zero.
+
 ## What I showed—and what I did not
 
-These experiments identified two heads with the attention pattern predicted for induction, showed that their scores were stable across independently sampled sequences, and found that zeroing their outputs damaged repeated-token prediction. Ablating the previous-token head `0.7` also collapsed their induction patterns and sharply increased repeated-half loss. Together, these results provide causal evidence that these three heads participate in the behavior.
+These experiments identified two heads with the attention pattern predicted for induction, showed that their scores were stable across independently sampled sequences, and found that both zero and mean ablation damaged repeated-token prediction. Ablating the previous-token head `0.7` also collapsed their induction patterns and sharply increased repeated-half loss under both interventions. Together, these results provide causal evidence that these three heads participate in the behavior.
 
-They do not reveal exactly what information `0.7` writes, which residual-stream directions carry it, whether the layer-one heads read it through their keys or queries, or whether this is the only circuit contributing to the model's predictions. Zero ablation is also a strong intervention that can move activations away from their normal distribution.
+They do not reveal exactly what information `0.7` writes, which residual-stream directions carry it, whether the layer-one heads read it through their keys or queries, or whether this is the only circuit contributing to the model's predictions. Zero ablation can move activations away from their normal distribution, while mean ablation depends on how the reference distribution and averaging procedure are chosen. Agreement between the two makes the result more robust, but neither intervention recreates the head's input-dependent output.
 
 The specific mechanism proposed for induction is **K-composition**: the output of the earlier head influences the keys used by the later induction heads. Establishing that path directly would require inspecting the weight composition or using more targeted activation or path patching. That is a natural next experiment rather than a claim supported directly by the work above.
 
@@ -108,7 +145,7 @@ The specific mechanism proposed for induction is **K-composition**: the output o
 
 Before this exercise, I tended to think of attention mainly as a way to encode statistical relationships between tokens. This experiment gave me a more concrete picture: a small collection of heads can implement a reusable, algorithm-like behavior that operates on a sequence sampled after training. It does not settle the larger question of what kinds of representations language models learn, but it shows how mechanistic interpretability can turn a behavioral observation into a testable internal hypothesis.
 
-The most useful lesson was methodological. I first predicted an attention pattern, turned that prediction into a quantitative score, checked it across multiple examples, and then intervened on the suspected components. That progression—from observation to measurement to causal testing—is what made the explanation feel more substantive than an attention visualization alone. It has encouraged me to continue learning about mechanistic interpretability.
+The most useful lesson was methodological. I first predicted an attention pattern, turned that prediction into a quantitative score, checked it across multiple examples, and then intervened on the suspected components. Comparing zero and mean ablation also showed why the intervention and its controls matter: the candidate-head result survived both methods, while a surprising control effect did not. That progression—from observation to measurement to causal testing—is what made the explanation feel more substantive than an attention visualization alone. It has encouraged me to continue learning about mechanistic interpretability.
 
 ---
 
