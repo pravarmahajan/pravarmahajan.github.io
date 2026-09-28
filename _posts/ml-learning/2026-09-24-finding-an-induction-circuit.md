@@ -149,4 +149,4 @@ The most useful lesson was methodological. I first predicted an attention patter
 
 ---
 
-The annotated notebook will be linked here after it is published. These experiments follow the [ARENA induction-head exercises](https://learn.arena.education/chapter1_transformer_interp/02_intro_mech_interp/2-finding-induction-heads/), and the model was inspected with [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens).
+The [annotated experiment notebook](https://github.com/pravarmahajan/mechanistic-interpretability/blob/master/transform_lens_section1.ipynb) contains the complete walkthrough, code, and saved outputs. These experiments follow the [ARENA induction-head exercises](https://learn.arena.education/chapter1_transformer_interp/02_intro_mech_interp/2-finding-induction-heads/), and the model was inspected with [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens).
